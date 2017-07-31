@@ -47,11 +47,11 @@ def download_old(version, library_id, param1, param2, param3, param4, param5):
         print Exception, ":", e
 
 conn = MySQLdb.connect(
-    host='localhost',
+    host='10.131.252.156',
     port=3306,
     user='root',
     passwd='root',
-    db='jdk_data',
+    db='fdroid',
     charset='utf8'
 )
 cur = conn.cursor()

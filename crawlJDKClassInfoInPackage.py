@@ -69,11 +69,11 @@ def download(library_id, version, param1, param2, param3, param4, param5, param6
 
 
 conn = MySQLdb.connect(
-    host='localhost',
+    host='10.131.252.156',
     port=3306,
     user='root',
     passwd='root',
-    db='jdk_data',
+    db='fdroid',
     charset='utf8'
 )
 cur = conn.cursor()
