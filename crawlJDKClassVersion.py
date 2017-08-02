@@ -6,7 +6,7 @@ from scrapy import Selector
 def download():
     try:
         # cur.execute("select class_id, doc_website from jdk_class where class_id > 0 and class_id < 100")
-        cur.execute("select class_id, doc_website, package_id from jdk_class where class_id >= 8265")
+        cur.execute("select class_id, doc_website, package_id from jdk_class")
         lists = cur.fetchall()
         # print lists
         for list in lists:
