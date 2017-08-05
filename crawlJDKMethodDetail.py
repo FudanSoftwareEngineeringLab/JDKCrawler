@@ -6,7 +6,7 @@ from scrapy import Selector
 def download():
     try:
         # jdk version 7 and 8, class_id <= 8264
-        cur.execute("select class_id, doc_website from jdk_class where class_id > 4240 and class_id <= 8264")
+        cur.execute("select class_id, doc_website from jdk_class where class_id <= 1000")
         lists = cur.fetchall()
         for list in lists:
             print list[0]
@@ -37,10 +37,10 @@ def download():
                         description = each.xpath('li/div[@class="block"]').extract()[0]
                         # print description
                     # javadoc 8
-                    '''if each.xpath('li/dl/dt/span[@class="returnLabel"]'):
+                    if each.xpath('li/dl/dt/span[@class="returnLabel"]'):
                         # print each.xpath('li/dl/dt/span[@class="returnLabel"]/parent::*/following-sibling::dd[position()=1]').extract()[0]
                         return_string = each.xpath('li/dl/dt/span[@class="returnLabel"]/parent::*/following-sibling::dd[position()=1]').extract()[0]
-                    xxxxxxxx
+
                     if each.xpath('li/dl/dt/span[@class="simpleTagLabel"]'):
                         if each.xpath('li/dl/dt/span[@class="simpleTagLabel"]/text()').extract()[0].find("Since") != -1:
                             # print each.xpath('li/dl/dt/span[@class="simpleTagLabel"]/parent::*/following-sibling::dd[position()=1]/text()').extract()[0]
@@ -68,24 +68,23 @@ def download():
                                 result += temps_children[i]
                             if title.find("Overrides") != -1:
                                 # print title + " " + result
-                                cur.execute(
-                                    "update jdk_method set full_declaration = %s, return_string = %s, description = %s, first_version = %s, override = %s where name = %s and class_id = %s and full_declaration is null limit 1",
-                                    (full_declaration, return_string, description, first_version, result, name, list[0]))
-                                conn.commit()
+                                override = result
                             else:
                                 # print title + " " + result
-                                cur.execute(
-                                    "update jdk_method set full_declaration = %s, return_string = %s, description = %s, first_version = %s, specified_by = %s where name = %s and class_id = %s and full_declaration is null limit 1",
-                                    (full_declaration, return_string, description, first_version, result, name, list[0]))
-                                conn.commit()
+                                specified_by = result
+
+                        cur.execute(
+                            "update jdk_method set full_declaration = %s, return_string = %s, description = %s, first_version = %s, override = %s, specified_by = %s where name = %s and class_id = %s and full_declaration is null limit %s",
+                            (full_declaration, return_string, description, first_version, override, specified_by, name, list[0], 1))
+                        conn.commit()
                     else:
                         cur.execute(
                             "update jdk_method set full_declaration = %s, return_string = %s, description = %s, first_version = %s where name = %s and class_id = %s and full_declaration is null limit 1",
                             (full_declaration, return_string, description, first_version, name, list[0]))
-                        conn.commit()'''
+                        conn.commit()
 
                     # javadoc 7
-                    if each.xpath('li/dl/dt/span[@class="strong"]'):
+                    '''if each.xpath('li/dl/dt/span[@class="strong"]'):
                         temps = each.xpath('li/dl/dt/span[@class="strong"]')
                         for temp in temps:
                             brother = temp.xpath('parent::*/following-sibling::dd[position()=1]')
@@ -112,17 +111,17 @@ def download():
                     cur.execute(
                         "update jdk_method set full_declaration = %s, return_string = %s, description = %s, first_version = %s, override = %s, specified_by = %s where name = %s and class_id = %s and full_declaration is null limit 1",
                         (full_declaration, return_string, description, first_version, override, specified_by, name, list[0]))
-                    conn.commit()
+                    conn.commit()'''
 
     except Exception, e:
         print Exception, ":", e
 
 conn = MySQLdb.connect(
-    host='10.131.252.156',
+    host='localhost',
     port=3306,
     user='root',
     passwd='root',
-    db='fdroid',
+    db='jdk_data',
     charset='utf8'
 )
 cur = conn.cursor()
