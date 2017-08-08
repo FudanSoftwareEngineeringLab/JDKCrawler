@@ -6,7 +6,7 @@ from scrapy import Selector
 def download():
     try:
         # jdk version 7 and 8, class_id <= 8264
-        cur.execute("select class_id, doc_website from jdk_class where class_id <= 1000")
+        cur.execute("select class_id, doc_website from jdk_class where class_id <= 4240")
         lists = cur.fetchall()
         for list in lists:
             print list[0]
@@ -98,16 +98,22 @@ def download():
                                     first_version = first_version[3:]
                                 first_version = first_version.replace("\n", "")
                                 first_version = first_version.strip()
+
+                    if each.xpath('li/dl/dt/strong/text()'):
+                        temps = each.xpath('li/dl/dt/strong')
+                        for temp in temps:
+                            title = temp.xpath('text()').extract()[0]
+                            brother = temp.xpath('parent::*/following-sibling::dd[position()=1]')
                             if title.find("Overrides") != -1:
                                 override = brother.extract()[0]
                             if title.find("Specified") != -1:
                                 specified_by = brother.extract()[0]
-                    # print "full_declaration: " + full_declaration
-                    # print "description: " + description
-                    # print "return_string: " + return_string
-                    # print "first_version: " + first_version
-                    # print "override: " + override
-                    # print "specified_by: " + specified_by
+                    #print "full_declaration: " + full_declaration
+                    #print "description: " + description
+                    #print "return_string: " + return_string
+                    #print "first_version: " + first_version
+                    print "override: " + override
+                    print "specified_by: " + specified_by
                     cur.execute(
                         "update jdk_method set full_declaration = %s, return_string = %s, description = %s, first_version = %s, override = %s, specified_by = %s where name = %s and class_id = %s and full_declaration is null limit 1",
                         (full_declaration, return_string, description, first_version, override, specified_by, name, list[0]))
@@ -117,11 +123,11 @@ def download():
         print Exception, ":", e
 
 conn = MySQLdb.connect(
-    host='localhost',
+    host='10.131.252.156',
     port=3306,
     user='root',
     passwd='root',
-    db='jdk_data',
+    db='fdroid',
     charset='utf8'
 )
 cur = conn.cursor()

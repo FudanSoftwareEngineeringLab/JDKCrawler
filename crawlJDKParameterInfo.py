@@ -6,13 +6,13 @@ from scrapy import Selector
 def download():
     try:
         # jdk version 7 and 8, class_id <= 8264 4240
-        cur.execute("select class_id, doc_website from jdk_class where class_id >= 406 and class_id <= 1000")
+        cur.execute("select class_id, doc_website from jdk_class where class_id <= 4240")
         lists = cur.fetchall()
-        for list in lists:
-            print list[0]
+        for every in lists:
+            print every[0]
             while 1 == 1:
                 try:
-                    sel = Selector(requests.get(list[1], timeout=10))
+                    sel = Selector(requests.get(every[1], timeout=10))
                 except Exception, e:
                     print 'timeout'
                     continue
@@ -25,7 +25,7 @@ def download():
                     full_declaration = each.xpath('li/pre').extract()[0]
                     method_name = each.xpath('li/h4/text()').extract()[0]
                     # print full_declaration
-                    cur.execute("select method_id from jdk_method where full_declaration = '" + full_declaration + "' and name = '" + method_name +"' and class_id = '" + str(list[0]) + "'")
+                    cur.execute("select method_id from jdk_method where full_declaration = '" + full_declaration + "' and name = '" + method_name +"' and class_id = '" + str(every[0]) + "'")
                     method_id = cur.fetchall()[0][0]
                     last_bracket = find_last(full_declaration, "(")
                     if full_declaration.find("throws") != -1:
@@ -33,16 +33,41 @@ def download():
                     else:
                         full_declaration = full_declaration[last_bracket:]
 
-                    #print full_declaration
-                    if full_declaration.find("&lt;") != -1:
-                        full_declaration = full_declaration.replace(full_declaration[full_declaration.find("&lt;"):(full_declaration.find("&gt;") + 4)], '')
-                    param_count = full_declaration.count(",") + 1
+                    print full_declaration
+                    while full_declaration.find("&lt;") != -1:
+                        first_lt_index = full_declaration.find("&lt;")
+                        first_gt_index = full_declaration.find("&gt;")
+                        while full_declaration[(first_lt_index + 4): first_gt_index].find("&lt;") != -1:
+                            temp = full_declaration[first_lt_index + 4: first_gt_index].find("&lt;")
+                            first_lt_index = first_lt_index + temp + 4
+                            print full_declaration[(first_lt_index + 4): first_gt_index].find("&lt;")
+                        full_declaration = full_declaration.replace(
+                            full_declaration[first_lt_index:(first_gt_index + 4)], '')
+                        # print full_declaration
                     # print method_id
                     full_declaration = full_declaration.replace('\n', "").replace("    ", "").strip()
                     # print each.xpath('li/dl/dt/span[@class="paramLabel"]')
                     if each.xpath('li/dl/dt/span[@class="paramLabel"]'):
                         if each.xpath('li/dl/dt/span[@class="paramLabel"]/text()').extract()[0] == "Parameters:":
                             print full_declaration
+                            param_count = 0
+                            following_tags_dd = each.xpath(
+                                'li/dl/dt/span[@class="paramLabel"]/parent::*/following-sibling::dd')
+                            if each.xpath('li/dl/dt/span[@class="paramLabel"]/parent::*/following-sibling::dt'):
+                                following_tags_dt = each.xpath(
+                                    'li/dl/dt/span[@class="paramLabel"]/parent::*/following-sibling::dt')
+                                next_dt = following_tags_dt[0]
+                                preceding_tags_dd = next_dt.xpath('preceding-sibling::dd')
+                                print preceding_tags_dd.extract()
+                                print following_tags_dd.extract()
+                                set_following_tags_dd = set(list(following_tags_dd.extract()))
+                                set_preceding_tags_dd = set(list(preceding_tags_dd.extract()))
+
+                                params = list(set_following_tags_dd & set_preceding_tags_dd)
+                                param_count = len(params)
+                            else:
+                                param_count = len(following_tags_dd)
+
                             print param_count
                             params = each.xpath(
                                 'li/dl/dt/span[@class="paramLabel"]/parent::*/following-sibling::dd[position()<=' + str(
@@ -60,13 +85,17 @@ def download():
                                 index = -1
                                 ss = ''
 
+                                temp_full_declaration = full_declaration
+                                result = 0
                                 while True:
-                                    index = full_declaration.index(name)
-                                    tmp = full_declaration.index(name) + len(name)
-                                    tmp_str = full_declaration[tmp]
+                                    index = temp_full_declaration.index(name)
+                                    tmp = temp_full_declaration.index(name) + len(name)
+                                    tmp_str = temp_full_declaration[tmp]
+                                    print tmp_str
+                                    result += tmp
                                     if tmp_str == ")" or tmp_str == ",":
-                                        strs = full_declaration[:index]
-                                        # print strs
+                                        strs = full_declaration[:(result - len(name))]
+                                        print strs
 
                                         begin_index = -1
                                         if find_last(strs, "(") > find_last(strs, ","):
@@ -79,12 +108,12 @@ def download():
                                         ss = ss.replace("   ", "")
                                         ss = ss.strip()
 
-                                        # print ss
+                                        print ss
                                         break
-                                    full_declaration = full_declaration[tmp:]
+                                    temp_full_declaration = temp_full_declaration[tmp:]
 
                                 type_string = ''
-                                if ss.find("<a href") != -1:
+                                if ss.find(">") != -1:
                                     end_index = ss.find("</a>")
                                     ss = ss.replace("</a>", "")
                                     tmp_index = ss.find(">") + 1
@@ -106,7 +135,7 @@ def download():
                                 print type_string
                                 print "type_class: " + str(type_class)
 
-                                cur.execute("insert into jdk_parameter(name, class_id, method_id, type_class, type_string, description) values (%s, %s, %s, %s, %s, %s)", (name, list[0], method_id, type_class, type_string, description))
+                                cur.execute("insert into jdk_parameter(name, class_id, method_id, type_class, type_string, description) values (%s, %s, %s, %s, %s, %s)", (name, every[0], method_id, type_class, type_string, description))
                                 conn.commit()
 
 
@@ -114,11 +143,11 @@ def download():
         print Exception, ":", e
 
 conn = MySQLdb.connect(
-    host='localhost',
+    host='10.131.252.156',
     port=3306,
     user='root',
     passwd='root',
-    db='jdk_data',
+    db='fdroid',
     charset='utf8'
 )
 cur = conn.cursor()

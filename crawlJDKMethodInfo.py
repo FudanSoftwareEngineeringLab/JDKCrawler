@@ -10,7 +10,7 @@ def download():
     is_static = 0
     try:
         # jdk version 7 and 8, class_id <= 8264 4240
-        cur.execute("select class_id, doc_website from jdk_class where class_id <= 1000")
+        cur.execute("select class_id, doc_website from jdk_class where class_id > 4240 and class_id <= 8264")
         lists = cur.fetchall()
         for list in lists:
             print list[0]
@@ -38,8 +38,8 @@ def download():
                         return_type = ''
                         for each in temp1:
                             # print temp1.xpath('code/span/a/text()').extract()[0]
-                            name = each.xpath('code/span/a/text()').extract()[0]
-                            # name = each.xpath('code/strong/a/text()').extract()[0]
+                            # name = each.xpath('code/span/a/text()').extract()[0]
+                            name = each.xpath('code/strong/a/text()').extract()[0]
                             print return_type + " " + name
                             cur.execute(
                                 "insert into jdk_method(type,name,return_type,is_static,class_id) values(%s,%s,%s,%s,%s)",
@@ -90,8 +90,8 @@ def download():
                                     return_type = ''
 
                             else:
-                                name = each.xpath('code/span/a/text()').extract()[0]
-                                # name = each.xpath('code/strong/a/text()').extract()[0]
+                                # name = each.xpath('code/span/a/text()').extract()[0]
+                                name = each.xpath('code/strong/a/text()').extract()[0]
                                 print return_type + " " + name
                                 cur.execute(
                                     "insert into jdk_method(type,name,return_type,is_static,class_id) values(%s,%s,%s,%s,%s)",
@@ -102,11 +102,11 @@ def download():
         print Exception, ":", e
 
 conn = MySQLdb.connect(
-    host='localhost',
+    host='10.131.252.156',
     port=3306,
     user='root',
     passwd='root',
-    db='jdk_data',
+    db='fdroid',
     charset='utf8'
 )
 cur = conn.cursor()
